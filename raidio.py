@@ -1,11 +1,13 @@
-from pyrogram import Client
-from pytgcalls import PyTgCalls
-from pytgcalls.types import AudioPiped
 import os
+import asyncio
+import subprocess
+from pyrogram import Client, filters
+from tgvcalls import PyTgCalls
+from tgvcalls.types import AudioPiped
 
 API_ID = 12799559
 API_HASH = "077254e69d93d08357f25bb5f4504580"
-
+CHAT_ID = -1002351120556  #
 if not os.path.exists("music_stream.session"):
     phone_number = input("Enter your phone number (with country code, e.g., +1234567890): ")
     app = Client("music_stream", api_id=API_ID, api_hash=API_HASH, phone_number=phone_number)
@@ -14,41 +16,36 @@ else:
 
 call = PyTgCalls(app)
 
-CHAT_ID = -1002351120556
+MUSIC_STREAM_URL = "https://www.youtube.com/live/jfKfPfyJRdk?si=L1JqDef8Pwdfcsna"
 
-
-MUSIC_STREAM_URL = "https://www.youtube.com/live/jfKfPfyJRdk?si=L1JqDef8Pwdfcsna" 
-
-async def start_stream():
+async def start_stream(url):
     await call.start()
+    ffmpeg_process = subprocess.Popen(
+        ["yt-dlp", "-f", "bestaudio", "-o", "-", url],
+        stdout=subprocess.PIPE
+    )
     await call.join_group_call(
         CHAT_ID,
-        AudioPiped(
-            MUSIC_STREAM_URL,
-            repeat=True 
-        )
+        AudioPiped(ffmpeg_process.stdout, repeat=True)
     )
     print("Streaming started!")
 
-@app.on_message()
+@app.on_message(filters.command("restart"))
 async def restart_stream(client, message):
-    if message.text == "/restart":
-        await call.leave_group_call(CHAT_ID)
-        await start_stream()
-        await message.reply("Stream restarted!")
+    await call.leave_group_call(CHAT_ID)
+    await start_stream(MUSIC_STREAM_URL)
+    await message.reply("Stream restarted!")
 
-@app.on_message()
+@app.on_message(filters.command("stop"))
 async def stop_stream(client, message):
-    if message.text == "/stop":
-        await call.leave_group_call(CHAT_ID)
-        await message.reply("Streaming stopped!")
+    await call.leave_group_call(CHAT_ID)
+    await message.reply("Streaming stopped!")
 
-@app.on_message()
+@app.on_message(filters.command("play"))
 async def play_new_url(client, message):
-    if message.text.startswith("/play "):
-        new_url = message.text.split("/play ", 1)[1]
-        await call.leave_group_call(CHAT_ID)
-        await call.join_group_call(CHAT_ID, AudioPiped(new_url, repeat=True))
-        await message.reply(f"Now streaming: {new_url}")
+    new_url = message.text.split(maxsplit=1)[1]
+    await call.leave_group_call(CHAT_ID)
+    await start_stream(new_url)
+    await message.reply(f"Now streaming: {new_url}")
 
 app.run()
