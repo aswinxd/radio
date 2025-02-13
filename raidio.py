@@ -1,5 +1,6 @@
 from pyrogram import Client
-from pytgcalls import PyTgCalls, Stream
+from pytgcalls import PyTgCalls
+from pytgcalls.types import AudioPiped
 import os
 
 API_ID = 12799559
@@ -22,7 +23,7 @@ async def start_stream():
     await call.start()
     await call.join_group_call(
         CHAT_ID,
-        Stream(
+        AudioPiped(
             MUSIC_STREAM_URL,
             repeat=True 
         )
@@ -47,7 +48,7 @@ async def play_new_url(client, message):
     if message.text.startswith("/play "):
         new_url = message.text.split("/play ", 1)[1]
         await call.leave_group_call(CHAT_ID)
-        await call.join_group_call(CHAT_ID, Stream(new_url, repeat=True))
+        await call.join_group_call(CHAT_ID, AudioPiped(new_url, repeat=True))
         await message.reply(f"Now streaming: {new_url}")
 
 app.run()
