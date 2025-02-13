@@ -2,12 +2,13 @@ import os
 import asyncio
 import subprocess
 from pyrogram import Client, filters
-from tgvcalls import PyTgCalls
-from tgvcalls.types import AudioPiped
+from pytgcalls import PyTgCalls
+from pytgcalls.types import StreamAudio
 
 API_ID = 12799559
 API_HASH = "077254e69d93d08357f25bb5f4504580"
-CHAT_ID = -1002351120556  #
+CHAT_ID = -1002351120556  # Replace with your group ID
+
 if not os.path.exists("music_stream.session"):
     phone_number = input("Enter your phone number (with country code, e.g., +1234567890): ")
     app = Client("music_stream", api_id=API_ID, api_hash=API_HASH, phone_number=phone_number)
@@ -26,7 +27,7 @@ async def start_stream(url):
     )
     await call.join_group_call(
         CHAT_ID,
-        AudioPiped(ffmpeg_process.stdout, repeat=True)
+        StreamAudio(ffmpeg_process.stdout)
     )
     print("Streaming started!")
 
